@@ -59,7 +59,7 @@ void addRegisters();
 void mapVirtualToPhysical(char* VPN, char* PFN);
 void unmapVirtualPage(char* VPN);
 
-u_int32_t inspectRegister(char* rN);
+u_int32_t inspectRegister(char* registerName);
 
 int8_t checkTLBForPage(u_int32_t VPN);
 
@@ -83,26 +83,29 @@ char** tokenize_input(char* input) {
     return tokens;
 }
 
-void pinspect(char * srt){
-    int vpn = atoi(srt);
+
+void linspect(char * addressStr){
+    u_int32_t pl = strtoul(addressStr, NULL, 10);
+    fprintf(output_file, "Current PID: %d. Inspected physical location %d. Value: %u\n",
+        activeProcess, pl, physicalMemory[pl]);
+
+}
+
+void tinspect(char * addressStr){
+    int tlbn = atoi(addressStr);
+    fprintf(output_file, "Current PID: %d. Inspected TLB entry %d. VPN: %d. PFN: %d. Valid: %d. PID: %d. Timestamp: %u\n",
+        activeProcess, tlbn, TLB[tlbn].VPN, TLB[tlbn].PFN, TLB[tlbn].valid, TLB[tlbn].PID, TLB[tlbn].timestamp);
+}
+
+void pinspect(char * addressStr){
+    int vpn = atoi(addressStr);
     int pfn = PageTable[activeProcess][vpn].PFN;
     int valid = PageTable[activeProcess][vpn].valid;
     fprintf(output_file, "Current PID: %d. Inspected page table entry %d. Physical frame number: %d. Valid: %d\n",
         activeProcess, vpn, pfn, valid);
 
 }
-void tinspect(char * srt){
-    int tlbn = atoi(srt);
-    fprintf(output_file, "Current PID: %d. Inspected TLB entry %d. VPN: %d. PFN: %d. Valid: %d. PID: %d. Timestamp: %u\n",
-        activeProcess, tlbn, TLB[tlbn].VPN, TLB[tlbn].PFN, TLB[tlbn].valid, TLB[tlbn].PID, TLB[tlbn].timestamp);
 
-}
-void linspect(char * srt){
-    u_int32_t pl = strtoul(srt, NULL, 10);
-    fprintf(output_file, "Current PID: %d. Inspected physical location %d. Value: %u\n",
-        activeProcess, pl, physicalMemory[pl]);
-
-}
 int main(int argc, char* argv[]) {
     const char usage[] = "Usage: memsym.out <policy> <input trace> <output trace>\n";
     char* input_trace;
@@ -579,17 +582,17 @@ void unmapVirtualPage(char* VPN){
     fprintf(output_file, "Current PID: %d. Unmapped virtual page number %d\n", activeProcess, vpn);
 }
 
-u_int32_t inspectRegister(char* rN) {
-    if(strcmp(rN, "r1")== 0){
-        fprintf(output_file, "Current PID: %d. Inspected register %s. Content: %d\n", activeProcess, rN, registerCache[activeProcess].register1Saved);
+u_int32_t inspectRegister(char* registerName) {
+    if(strcmp(registerName, "r1")== 0){
+        fprintf(output_file, "Current PID: %d. Inspected register %s. Content: %d\n", activeProcess, registerName, registerCache[activeProcess].register1Saved);
         return registerCache[activeProcess].register1Saved;
 
-    } else if(strcmp(rN, "r2") == 0){
-        fprintf(output_file, "Current PID: %d. Inspected register %s. Content: %d\n", activeProcess, rN, registerCache[activeProcess].register2Saved);
+    } else if(strcmp(registerName, "r2") == 0){
+        fprintf(output_file, "Current PID: %d. Inspected register %s. Content: %d\n", activeProcess, registerName, registerCache[activeProcess].register2Saved);
         return registerCache[activeProcess].register2Saved;
 
     } else {
-        fprintf(output_file,"Current PID: %d. Error: invalid register operand %s\n", activeProcess, rN);
+        fprintf(output_file,"Current PID: %d. Error: invalid register operand %s\n", activeProcess, registerName);
         exit(-1);
         
     }
